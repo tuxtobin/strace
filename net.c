@@ -219,14 +219,12 @@ do_sockname(struct tcb *tcp, int flags_arg)
 
 SYS_FUNC(accept)
 {
-	do_sockname(tcp, -1);
-	return RVAL_FD;
+	return do_sockname(tcp, -1) | RVAL_FD;
 }
 
 SYS_FUNC(accept4)
 {
-	do_sockname(tcp, 3);
-	return RVAL_FD;
+	return do_sockname(tcp, 3) | RVAL_FD;
 }
 
 SYS_FUNC(send)
