@@ -192,29 +192,41 @@ SYS_FUNC(listen)
 static int
 do_sockname(struct tcb *tcp, int flags_arg)
 {
+	int rc = 0, ulen, rlen;
+
 	if (entering(tcp)) {
 		printfd(tcp, tcp->u_arg[0]);
 		tprints(", ");
-		return 0;
+		if (tcp->u_arg[1] && tcp->u_arg[2] && verbose(tcp)
+		    && umove(tcp, tcp->u_arg[2], &ulen) == 0) {
+			/* abuse of auxstr to retain state */
+			tcp->auxstr = (void *) (long) ulen;
+			return 0;
+		} else {
+			printaddr(tcp->u_arg[1]);
+			tprints(", ");
+			printaddr(tcp->u_arg[2]);
+			rc = RVAL_DECODED;
+			goto print_sock_type_flags;
+		}
 	}
 
-	int len;
-	if (!tcp->u_arg[2] || !verbose(tcp) || syserror(tcp) ||
-	    umove(tcp, tcp->u_arg[2], &len) < 0) {
+	ulen = (long) tcp->auxstr;
+	if (syserror(tcp) || umove(tcp, tcp->u_arg[2], &rlen) < 0) {
 		printaddr(tcp->u_arg[1]);
-		tprints(", ");
-		printaddr(tcp->u_arg[2]);
+		tprintf(", [%d]", ulen);
 	} else {
-		decode_sockaddr(tcp, tcp->u_arg[1], len);
-		tprintf(", [%d]", len);
+		decode_sockaddr(tcp, tcp->u_arg[1], ulen > rlen ? rlen : ulen);
+		tprintf(", [%d]", rlen);
 	}
+	tcp->auxstr = NULL;
 
+print_sock_type_flags:
 	if (flags_arg >= 0) {
 		tprints(", ");
-		printflags(sock_type_flags, tcp->u_arg[flags_arg],
-			   "SOCK_???");
+		printflags(sock_type_flags, tcp->u_arg[flags_arg], "SOCK_???");
 	}
-	return 0;
+	return rc;
 }
 
 SYS_FUNC(accept)
