@@ -217,7 +217,10 @@ do_sockname(struct tcb *tcp, int flags_arg)
 		tprintf(", [%d]", ulen);
 	} else {
 		decode_sockaddr(tcp, tcp->u_arg[1], ulen > rlen ? rlen : ulen);
-		tprintf(", [%d]", rlen);
+		if (ulen < rlen)
+			tprintf(", [%d->%d]", ulen, rlen);
+		else
+			tprintf(", [%d]", rlen);
 	}
 	tcp->auxstr = NULL;
 
