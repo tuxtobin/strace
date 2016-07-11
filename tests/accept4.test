@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Check decoding of accept4 syscall.
+
+. "${srcdir=.}/accept.test"
